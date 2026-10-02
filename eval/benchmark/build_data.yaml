@@ -1,0 +1,2 @@
+# build_data.py (Hydra). Rebuilds ../data/benchmark/ (the benchmark) from the upstream curation code (GENEPFN_EVAL).
+task: null             # substring filter on task_id (null = all tasks)

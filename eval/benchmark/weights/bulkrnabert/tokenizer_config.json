@@ -1,0 +1,17 @@
+{
+  "tokenizer_class": "BinnedOmicTokenizer",
+  "n_expressions_bins": 64,
+  "min_omic_value": 0.0,
+  "max_omic_value": 1.0,
+  "use_max_normalization": true,
+  "normalization_factor": 5.547176906585117,
+  "prepend_cls_token": false,
+  "fixed_sequence_length": null,
+  "unpadded_length": null,
+  "auto_map": {
+    "AutoTokenizer": [
+      "tokenizer.BinnedOmicTokenizer",
+      null
+    ]
+  }
+}
