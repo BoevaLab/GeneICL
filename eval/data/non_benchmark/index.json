@@ -1,0 +1,55 @@
+{
+  "n_genes": 20021,
+  "datasets": {
+    "GSE193677": 1301,
+    "GSE251778": 169,
+    "GSE102556": 257,
+    "GSE80655": 275,
+    "GSE124284": 102,
+    "GSE244807": 241
+  },
+  "tasks": [
+    {
+      "task_id": "GSE193677::historemiss",
+      "dataset": "GSE193677",
+      "task_type": "classification",
+      "n": 1301,
+      "file": "tasks/GSE193677::historemiss.npz"
+    },
+    {
+      "task_id": "GSE251778::mdd_diagnosis",
+      "dataset": "GSE251778",
+      "task_type": "classification",
+      "n": 169,
+      "file": "tasks/GSE251778::mdd_diagnosis.npz"
+    },
+    {
+      "task_id": "GSE102556::brain_region",
+      "dataset": "GSE102556",
+      "task_type": "classification",
+      "n": 257,
+      "file": "tasks/GSE102556::brain_region.npz"
+    },
+    {
+      "task_id": "GSE80655::age_at_death",
+      "dataset": "GSE80655",
+      "task_type": "regression",
+      "n": 275,
+      "file": "tasks/GSE80655::age_at_death.npz"
+    },
+    {
+      "task_id": "GSE124284::age_at_draw",
+      "dataset": "GSE124284",
+      "task_type": "regression",
+      "n": 102,
+      "file": "tasks/GSE124284::age_at_draw.npz"
+    },
+    {
+      "task_id": "GSE244807::os",
+      "dataset": "GSE244807",
+      "task_type": "survival",
+      "n": 225,
+      "file": "tasks/GSE244807::os.npz"
+    }
+  ]
+}

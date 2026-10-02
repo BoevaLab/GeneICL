@@ -1,0 +1,24 @@
+{
+  "architectures": [
+    "BulkRNABert"
+  ],
+  "attention_maps_to_save": [],
+  "auto_map": {
+    "AutoConfig": "bulkrnabert.BulkRNABertConfig",
+    "AutoModel": "bulkrnabert.BulkRNABert"
+  },
+  "embed_dim": 256,
+  "embeddings_layers_to_save": [],
+  "ffn_embed_dim": 512,
+  "init_gene_embed_dim": 200,
+  "key_size": 32,
+  "model_type": "BulkRNABert",
+  "n_expressions_bins": 66,
+  "n_genes": 19062,
+  "num_attention_heads": 8,
+  "num_layers": 4,
+  "project_gene_embedding": true,
+  "torch_dtype": "float32",
+  "transformers_version": "4.51.0",
+  "use_gene_embedding": true
+}
