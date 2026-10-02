@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
 </p>
 
-# GeneICL: A tabular foundation model for transcriptomics		 <img src="logo.svg" alt="" width="56" height="56" valign="middle">
+# GeneICL: A tabular foundation model for transcriptomics
 
 GeneICL is a tabular foundation model for bulk gene expression data that does **classification, regression
 and survival analysis with one model**. Given a labelled support set and unlabelled query rows (gene expression
