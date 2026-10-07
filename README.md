@@ -1,11 +1,11 @@
 <p align="center">
 <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
 <img src="https://img.shields.io/pypi/v/geneicl" alt="PyPI version">
-<a href="https://arxiv.org/abs/REPLACE_WITH_ARXIV_ID"><img src="https://img.shields.io/badge/arXiv-paper-b31b1b" alt="arXiv paper"></a>
+<a href="https://arxiv.org/abs/2610.08694"><img src="https://img.shields.io/badge/arXiv-paper-b31b1b" alt="arXiv paper"></a>
 <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
 </p>
 
-# GeneICL: A tabular foundation model for transcriptomics		 <img src="logo.svg" alt="" width="56" height="56" valign="middle">
+# GeneICL: A tabular foundation model for transcriptomics
 
 GeneICL is a tabular foundation model for bulk gene expression data that does **classification, regression
 and survival analysis with one model**. Given a labelled support set and unlabelled query rows (gene expression
