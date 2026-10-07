@@ -1,0 +1,92 @@
+# Config for make_main_table.py -> the main results table (CSV).
+# Paths are relative to eval/benchmark/. A row whose result files are missing gets empty metrics.
+# `clf` / `reg`: one or more benchmark.py result CSVs; several files = several seeds -> mean over seeds (SD in brackets).
+# R2 is pooled out-of-fold and needs the per-sample companion <file>.oof.csv; without it the row leaves R2 empty.
+# `params`: parameter count (mean over clf/reg checkpoints); `params_ckpt`: count it from these checkpoints
+# instead (plain torch state dicts), skipping unused weights under `params_exclude` prefixes. Values without a local checkpoint are taken from the model papers/cards.
+out_csv: results/main_table.csv   # unrounded (<metric>, <metric>_sd per model)
+out_extra_csv: results/main_table_extra.csv   # other logged metrics + train_seconds / peak_ram_mb / peak_vram_mb
+reference_row: GeneICL      # rows whose CV folds differ from this row's on any task are reported empty
+
+rows:
+  # --- Tabular foundation models ---
+  - name: GeneICL              # seeds 0,1,2 (mean + SD), encoder without the gene->CLS FFN (enc_cls_ffn=false)
+    section: Tabular foundation models
+    highlight: true
+    params_ckpt: [../../geneicl/checkpoints/trm_segmented8_s0.pt]
+    params_exclude: [loop_layers.]   # unused block stored in the checkpoint (see geneicl/model.py)
+    clf: [results/geneicl_trm_s0_classification.csv, results/geneicl_trm_s1_classification.csv,
+          results/geneicl_trm_s2_classification.csv]
+    reg: [results/geneicl_trm_s0_regression.csv, results/geneicl_trm_s1_regression.csv,
+          results/geneicl_trm_s2_regression.csv]
+  - name: GeneICL (ensembled)   # per seed: 32 support subsets x 3 PCA thresholds; then mean + SD over seeds 0,1,2
+    highlight: true
+    params_ckpt: [../../geneicl/checkpoints/trm_segmented8_s0.pt]
+    params_exclude: [loop_layers.]   # unused block stored in the checkpoint (see geneicl/model.py)
+    clf: [results/geneicl_trm_supp_thresh_k32_s0_classification.csv,
+          results/geneicl_trm_supp_thresh_k32_s1_classification.csv,
+          results/geneicl_trm_supp_thresh_k32_s2_classification.csv]
+    reg: [results/geneicl_trm_supp_thresh_k32_s0_regression.csv,
+          results/geneicl_trm_supp_thresh_k32_s1_regression.csv,
+          results/geneicl_trm_supp_thresh_k32_s2_regression.csv]
+  - name: TabFM
+    params: 1.64e9            # google/tabfm-1.0.0-pytorch: fp32 safetensors, (6.56 GB clf + 6.59 GB reg) / 4 B / 2
+    clf: [results/tabfm_classification.csv]
+    reg: [results/tabfm_regression.csv]
+  - name: TabPFN-2
+    params: 9.0e6             # no results on the current tasks
+  - name: TabPFN-3
+    params: 55.5e6
+    clf: [results/tabpfn_classification.csv]   # local v3_default run; TARGET::relapse re-scored via the API
+    reg: [results/tabpfn_regression.csv]       # (model=tabpfn_api, same v3_default checkpoint)
+  - name: TabPFN-Wide
+    params: 7.0e6             # no results
+  - name: TabICLv2
+    params: 28.0e6            # weights/tabicl-*: 27.55M (clf) / 28.54M (reg)
+    clf: [results/tabicl_classification.csv]
+    reg: [results/tabicl_regression.csv]
+  - name: TabDPT-Turbo
+    params: 63.5e6            # weights/tabdpt/tabdpt1_2.safetensors (TabDPT v1.2 = TabDPT-Turbo): 63.51M
+    clf: [results/tabdpt_classification.csv]
+    reg: [results/tabdpt_regression.csv]
+  - name: LimiX-16M
+    params: 16.5e6            # weights/LimiX-16M.ckpt (stable-ai/LimiX-16M), repo limix-ldm-ai/LimiX @61ede97
+    clf: [results/limix_classification.csv]
+    reg: [results/limix_regression.csv]
+  # --- Self-supervised transcriptomics models (zero-shot: frozen embeddings + the `en` probe) ---
+  - name: BulkFormer
+    section: Self-supervised transcriptomics models
+    params: 191.9e6           # weights/bulkformer/bulkformer_147M.ckpt state dict (released as "147M")
+    clf: [results/bulkformer_classification.csv]
+    reg: [results/bulkformer_regression.csv]
+  - name: BulkRNABert
+    params: 6.01e6            # weights/bulkrnabert/model.safetensors
+    clf: [results/bulkrnabert_classification.csv]
+    reg: [results/bulkrnabert_regression.csv]
+  - name: COMPASS
+    params: 1.02e6            # weights/compass/pretrainer.pt
+    clf: [results/compass_classification.csv]
+    reg: [results/compass_regression.csv]
+  - name: scGPT
+    params: 51.3e6            # weights/scgpt/scGPT_human/best_model.pt
+    clf: [results/scgpt_classification.csv]
+    reg: [results/scgpt_regression.csv]
+  - name: scFoundation
+    params: 100.0e6           # xTrimoGene-100M as published (weights/scfoundation/models.ckpt, HF genbio-ai/scFoundation)
+    clf: [results/scfoundation_classification.csv]
+    reg: [results/scfoundation_regression.csv]
+  # --- Conventional baselines (tuned: 50-iteration random search per fold) ---
+  - name: Linear (elastic-net)
+    section: Conventional baselines
+    clf: [results/en_classification.csv]
+    reg: [results/en_regression.csv]
+  - name: Random Forest        # tuned run not complete yet
+  - name: LightGBM
+    clf: [results/lightgbm_classification.csv]
+    reg: [results/lightgbm_regression.csv]
+  - name: CatBoost
+    clf: [results/catboost_classification.csv]
+    reg: [results/catboost_regression.csv]
+  - name: MLP
+    clf: [results/mlp_classification.csv]
+    reg: [results/mlp_regression.csv]

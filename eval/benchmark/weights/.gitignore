@@ -1,0 +1,13 @@
+# Not shipped: downloads too large or licence-restricted to vendor (see README.md), files the extractors
+# cache next to their weights, and local leftovers of models outside the paper.
+.cache/
+bulkformer/bulkformer_147M.ckpt
+scgpt/
+scfoundation/
+tabfm/
+compass/gencode.v36.annotation.gtf.gz
+compass/*.tsv
+LimiX-2.ckpt
+LimiX-2M.ckpt
+tabpfn-v3.5-*.safetensors
+trm_segmented8_s*.pt

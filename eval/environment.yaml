@@ -1,0 +1,33 @@
+# Everything under eval/: benchmark.py (GeneICL, the tuned classical baselines, the in-context tabular FMs) and the
+# result tables (pooled_oof_table.py, make_main_table.py). The pip package itself (`pip install .`) needs only
+# torch + numpy.
+#   conda env create -f eval/environment.yaml && conda activate geneicl-benchmark
+# numpy/scipy/sklearn/pandas are held at the versions the stored benchmark rows were made with.
+# Not in here (own environments, see eval/benchmark/README.md): TabFM (benchmark.py TABFM_PY), LimiX's code
+# (a clone, benchmark.py LIMIX_REPO), the frozen-FM extractors (fm_baselines/fm_common.py), and
+# `model=tabpfn_api`, whose tabpfn-client==0.3.3 pins conflict with this env.
+name: geneicl-benchmark
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pytorch-gpu>=2.9.1      # CPU-only machine: use `pytorch>=2.9.1`; on a GPU-less login node set CONDA_OVERRIDE_CUDA=12
+  - numpy>=2.2,<2.3
+  - scipy=1.15
+  - scikit-learn=1.7
+  - pandas=2.2
+  - hydra-core>=1.3.2,<2
+  - psutil
+  # --- baselines ---
+  - catboost
+  - lightgbm
+  - cuda-cudart-dev=12.9    # cuda.h: Triton JIT-builds its driver stub at run time
+  - pip
+  - pip:
+      - nvidia-ml-py        # optional: `pynvml`, benchmark.py's VRAM logging (NaN without it)
+      - tabpfn==9.0.0       # benchmark.py pins the v3 checkpoint via model_path
+      - tabicl==2.2.0
+      - tabdpt==1.2.0       # the version the stored tabdpt rows used
+      - faiss-cpu>=1.11.0   # hard top-level import in tabdpt.utils
+      - kditransform        # LimiX
+      - nvtx                # LimiX

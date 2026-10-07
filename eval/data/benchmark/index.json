@@ -1,0 +1,403 @@
+{
+  "n_genes": 20021,
+  "datasets": {
+    "BeatAML": 705,
+    "CCLE": 1223,
+    "GSE107422": 80,
+    "GSE107995": 414,
+    "GSE109142": 218,
+    "GSE112927": 235,
+    "GSE115525": 73,
+    "GSE116324": 44,
+    "GSE120622": 104,
+    "GSE154261": 99,
+    "GSE156699": 88,
+    "GSE156902": 796,
+    "GSE157103": 126,
+    "GSE157657": 760,
+    "GSE163882": 217,
+    "GSE175718": 234,
+    "GSE176178": 40,
+    "GSE185263": 392,
+    "GSE198520": 92,
+    "GSE213346": 40,
+    "GSE234297": 144,
+    "GSE243375": 287,
+    "GSE278476": 89,
+    "GSE279480": 1021,
+    "GSE294705": 60,
+    "GSE316750": 82,
+    "GSE54460": 99,
+    "GSE68086": 246,
+    "GSE81538": 405,
+    "GSE93624": 245,
+    "GTEx": 16965,
+    "TARGET": 4149
+  },
+  "tasks": [
+    {
+      "task_id": "BeatAML::auc_Bortezomib",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 461,
+      "file": "tasks/BeatAML::auc_Bortezomib.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Dasatinib",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 491,
+      "file": "tasks/BeatAML::auc_Dasatinib.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Doramapimod",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 452,
+      "file": "tasks/BeatAML::auc_Doramapimod.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Gilteritinib",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 277,
+      "file": "tasks/BeatAML::auc_Gilteritinib.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Midostaurin",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 461,
+      "file": "tasks/BeatAML::auc_Midostaurin.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Panobinostat",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 285,
+      "file": "tasks/BeatAML::auc_Panobinostat.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Quizartinib",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 459,
+      "file": "tasks/BeatAML::auc_Quizartinib.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Sorafenib",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 492,
+      "file": "tasks/BeatAML::auc_Sorafenib.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Trametinib",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 482,
+      "file": "tasks/BeatAML::auc_Trametinib.npz"
+    },
+    {
+      "task_id": "BeatAML::auc_Venetoclax",
+      "dataset": "BeatAML",
+      "task_type": "regression",
+      "n": 365,
+      "file": "tasks/BeatAML::auc_Venetoclax.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Bosutinib",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1177,
+      "file": "tasks/CCLE::ic50_Bosutinib.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Doxorubicin",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1179,
+      "file": "tasks/CCLE::ic50_Doxorubicin.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Erlotinib",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1202,
+      "file": "tasks/CCLE::ic50_Erlotinib.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Gemcitabine",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1187,
+      "file": "tasks/CCLE::ic50_Gemcitabine.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Lapatinib",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1192,
+      "file": "tasks/CCLE::ic50_Lapatinib.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Olaparib",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1194,
+      "file": "tasks/CCLE::ic50_Olaparib.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Oxaliplatin",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1179,
+      "file": "tasks/CCLE::ic50_Oxaliplatin.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Paclitaxel",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1196,
+      "file": "tasks/CCLE::ic50_Paclitaxel.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Tretinoin",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1191,
+      "file": "tasks/CCLE::ic50_Tretinoin.npz"
+    },
+    {
+      "task_id": "CCLE::ic50_Vorinostat",
+      "dataset": "CCLE",
+      "task_type": "regression",
+      "n": 1193,
+      "file": "tasks/CCLE::ic50_Vorinostat.npz"
+    },
+    {
+      "task_id": "GSE107422::systemic_recurrence",
+      "dataset": "GSE107422",
+      "task_type": "classification",
+      "n": 80,
+      "file": "tasks/GSE107422::systemic_recurrence.npz"
+    },
+    {
+      "task_id": "GSE107995::tb_group",
+      "dataset": "GSE107995",
+      "task_type": "classification",
+      "n": 414,
+      "file": "tasks/GSE107995::tb_group.npz"
+    },
+    {
+      "task_id": "GSE109142::week4_remission",
+      "dataset": "GSE109142",
+      "task_type": "classification",
+      "n": 198,
+      "file": "tasks/GSE109142::week4_remission.npz"
+    },
+    {
+      "task_id": "GSE112927::graft_loss",
+      "dataset": "GSE112927",
+      "task_type": "classification",
+      "n": 235,
+      "file": "tasks/GSE112927::graft_loss.npz"
+    },
+    {
+      "task_id": "GSE115525::prednisolone_lc50",
+      "dataset": "GSE115525",
+      "task_type": "regression",
+      "n": 73,
+      "file": "tasks/GSE115525::prednisolone_lc50.npz"
+    },
+    {
+      "task_id": "GSE116324::bortezomib_response",
+      "dataset": "GSE116324",
+      "task_type": "classification",
+      "n": 44,
+      "file": "tasks/GSE116324::bortezomib_response.npz"
+    },
+    {
+      "task_id": "GSE120622::relapse",
+      "dataset": "GSE120622",
+      "task_type": "classification",
+      "n": 80,
+      "file": "tasks/GSE120622::relapse.npz"
+    },
+    {
+      "task_id": "GSE154261::recurrence",
+      "dataset": "GSE154261",
+      "task_type": "classification",
+      "n": 73,
+      "file": "tasks/GSE154261::recurrence.npz"
+    },
+    {
+      "task_id": "GSE156699::chemo_response",
+      "dataset": "GSE156699",
+      "task_type": "classification",
+      "n": 88,
+      "file": "tasks/GSE156699::chemo_response.npz"
+    },
+    {
+      "task_id": "GSE156902::group",
+      "dataset": "GSE156902",
+      "task_type": "classification",
+      "n": 796,
+      "file": "tasks/GSE156902::group.npz"
+    },
+    {
+      "task_id": "GSE157103::hospital_free_days",
+      "dataset": "GSE157103",
+      "task_type": "regression",
+      "n": 66,
+      "file": "tasks/GSE157103::hospital_free_days.npz"
+    },
+    {
+      "task_id": "GSE157657::response_group",
+      "dataset": "GSE157657",
+      "task_type": "classification",
+      "n": 59,
+      "file": "tasks/GSE157657::response_group.npz"
+    },
+    {
+      "task_id": "GSE163882::pcr",
+      "dataset": "GSE163882",
+      "task_type": "classification",
+      "n": 217,
+      "file": "tasks/GSE163882::pcr.npz"
+    },
+    {
+      "task_id": "GSE175718::rejection_type",
+      "dataset": "GSE175718",
+      "task_type": "classification",
+      "n": 234,
+      "file": "tasks/GSE175718::rejection_type.npz"
+    },
+    {
+      "task_id": "GSE176178::bcg_response",
+      "dataset": "GSE176178",
+      "task_type": "classification",
+      "n": 40,
+      "file": "tasks/GSE176178::bcg_response.npz"
+    },
+    {
+      "task_id": "GSE185263::mortality",
+      "dataset": "GSE185263",
+      "task_type": "classification",
+      "n": 345,
+      "file": "tasks/GSE185263::mortality.npz"
+    },
+    {
+      "task_id": "GSE198520::eular_response",
+      "dataset": "GSE198520",
+      "task_type": "classification",
+      "n": 46,
+      "file": "tasks/GSE198520::eular_response.npz"
+    },
+    {
+      "task_id": "GSE213346::disease_course",
+      "dataset": "GSE213346",
+      "task_type": "classification",
+      "n": 40,
+      "file": "tasks/GSE213346::disease_course.npz"
+    },
+    {
+      "task_id": "GSE234297::als_diagnosis",
+      "dataset": "GSE234297",
+      "task_type": "classification",
+      "n": 144,
+      "file": "tasks/GSE234297::als_diagnosis.npz"
+    },
+    {
+      "task_id": "GSE243375::pcr",
+      "dataset": "GSE243375",
+      "task_type": "classification",
+      "n": 242,
+      "file": "tasks/GSE243375::pcr.npz"
+    },
+    {
+      "task_id": "GSE278476::vaccine_response",
+      "dataset": "GSE278476",
+      "task_type": "classification",
+      "n": 46,
+      "file": "tasks/GSE278476::vaccine_response.npz"
+    },
+    {
+      "task_id": "GSE279480::cmv_status",
+      "dataset": "GSE279480",
+      "task_type": "classification",
+      "n": 255,
+      "file": "tasks/GSE279480::cmv_status.npz"
+    },
+    {
+      "task_id": "GSE294705::hfri",
+      "dataset": "GSE294705",
+      "task_type": "classification",
+      "n": 60,
+      "file": "tasks/GSE294705::hfri.npz"
+    },
+    {
+      "task_id": "GSE316750::bcr",
+      "dataset": "GSE316750",
+      "task_type": "classification",
+      "n": 41,
+      "file": "tasks/GSE316750::bcr.npz"
+    },
+    {
+      "task_id": "GSE54460::bcr",
+      "dataset": "GSE54460",
+      "task_type": "classification",
+      "n": 99,
+      "file": "tasks/GSE54460::bcr.npz"
+    },
+    {
+      "task_id": "GSE68086::cancer_type",
+      "dataset": "GSE68086",
+      "task_type": "classification",
+      "n": 246,
+      "file": "tasks/GSE68086::cancer_type.npz"
+    },
+    {
+      "task_id": "GSE81538::ki67",
+      "dataset": "GSE81538",
+      "task_type": "regression",
+      "n": 405,
+      "file": "tasks/GSE81538::ki67.npz"
+    },
+    {
+      "task_id": "GSE93624::complicated_progression",
+      "dataset": "GSE93624",
+      "task_type": "classification",
+      "n": 245,
+      "file": "tasks/GSE93624::complicated_progression.npz"
+    },
+    {
+      "task_id": "GTEx::telomere_length",
+      "dataset": "GTEx",
+      "task_type": "regression",
+      "n": 3940,
+      "file": "tasks/GTEx::telomere_length.npz"
+    },
+    {
+      "task_id": "TARGET::inss_stage",
+      "dataset": "TARGET",
+      "task_type": "classification",
+      "n": 159,
+      "file": "tasks/TARGET::inss_stage.npz"
+    },
+    {
+      "task_id": "TARGET::mrd",
+      "dataset": "TARGET",
+      "task_type": "regression",
+      "n": 453,
+      "file": "tasks/TARGET::mrd.npz"
+    },
+    {
+      "task_id": "TARGET::relapse",
+      "dataset": "TARGET",
+      "task_type": "classification",
+      "n": 2046,
+      "file": "tasks/TARGET::relapse.npz"
+    }
+  ]
+}

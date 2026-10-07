@@ -1,0 +1,8 @@
+eval/data/benchmark/datasets/*.npz filter=lfs diff=lfs merge=lfs -text
+eval/data/non_benchmark/datasets/*.npz filter=lfs diff=lfs merge=lfs -text
+eval/benchmark/weights/tabicl-*.ckpt filter=lfs diff=lfs merge=lfs -text
+eval/benchmark/weights/tabdpt/*.safetensors filter=lfs diff=lfs merge=lfs -text
+eval/benchmark/weights/bulkformer/*.ckpt filter=lfs diff=lfs merge=lfs -text
+eval/benchmark/weights/bulkformer/assets/*.pt filter=lfs diff=lfs merge=lfs -text
+eval/benchmark/weights/bulkrnabert/model.safetensors filter=lfs diff=lfs merge=lfs -text
+eval/benchmark/weights/bulkrnabert/jax_params/params.joblib filter=lfs diff=lfs merge=lfs -text
