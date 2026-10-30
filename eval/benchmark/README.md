@@ -15,15 +15,18 @@ classification (auto-selected per task).
 
 | key | default | role |
 |---|---|---|
-| `geneicl_ckpt` | `../../geneicl/checkpoints/trm_segmented8_s0.pt` | GeneICL checkpoint. The reported runs use `trm_segmented8_s{0,1,2}.pt` (nhead=8, `enc_cls_ffn=false`, 4.24M params) |
-| `geneicl_support_ens` | off | test-time ensemble over K support views: the full support + K-1 seeded 90% class-stratified subsets |
-| `geneicl_pca_ens` | off | average over the model's internal `pca_var` thresholds, e.g. `[0.9,0.95,0.98]` |
+| `geneicl_inference` | `normal` | `normal` (GeneICL: 6 input configurations weighted by an inner CV on the support set) or `fast` (GeneICL-Fast: plain + gene-weighted input, no inner CV); see `geneicl/__init__.py` |
+| `geneicl_ckpt_cls` | `../../geneicl/checkpoints/C20RFbal_s0.pt` | checkpoint for the classification tasks |
+| `geneicl_ckpt_reg` | `../../geneicl/checkpoints/R20RFs20Yv_s0.pt` | checkpoint for the regression tasks |
+| `geneicl_ckpt` | off | one checkpoint for every task (overrides both), e.g. the v1.0.0 `trm_segmented8_s0.pt` |
 | `query_chunk` | 256 | test rows per forward pass |
 
-The reported configuration is 3 seeds x {plain, ensembled} = 6 GPU jobs, each over the
-whole suite -> `results/geneicl_trm_s<seed>_<task_type>.csv` (plain) and
-`results/geneicl_trm_supp_thresh_k32_s<seed>_<task_type>.csv` (`geneicl_support_ens=32
-'geneicl_pca_ens=[0.9,0.95,0.98]'`: 32 views x 3 thresholds, averaged within the seed).
+The reported configuration is 3 seeds x {normal, fast} = 6 GPU jobs, each over the whole suite ->
+`results/geneicl_s<seed>_<task_type>.csv` (`out=results/geneicl_s<seed>`) and
+`results/geneicl_fast_s<seed>_<task_type>.csv` (`geneicl_inference=fast out=results/geneicl_fast_s<seed>`), seed
+`<seed>` = `geneicl_ckpt_cls=../../geneicl/checkpoints/C20RFbal_s<seed>.pt
+geneicl_ckpt_reg=../../geneicl/checkpoints/R20RFs20Yv_s<seed>.pt`. The paper's numbers (v1.0.0, `trm_segmented8`,
+plain and test-time ensembled) are reproduced by the `v1.0.0` tag of this repository.
 
 **Classical baselines** (`en`, `rf`, `catboost`, `lightgbm`, `mlp`), always tuned: every model on the PCA-90%
 input (`TUNE_PCA_VAR`), 50 candidates x inner 5-fold CV per outer fold (TabArena-aligned search spaces), pick by
@@ -55,7 +58,7 @@ raw genes and the probe is an untuned `en` (default hyperparameters) on the PCA-
 |---|---|
 | in-context tabular FMs | `Impute(mean) → StandardScaler → PCA` (full SVD, data-dependent #PCs), fitted on the support of each outer fold |
 | every classical model | the same pipeline with PCA, fitted on the support of each outer fold (not inside the tuning search) |
-| `geneicl` | raw genes; the model does its own per-fold standardization + internal PCA |
+| `geneicl` | raw genes; the model does its own per-fold gene encoding + internal PCA |
 | `EMB_MODELS` | frozen embeddings → the same PCA front-end + untuned EN / EN-logistic probe |
 
 ## Environments
