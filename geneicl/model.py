@@ -4,11 +4,48 @@ MAX_K = 10        # classification head width; tasks with K<MAX_K classes leave 
 PCA_WHITEN = 0.5  # whitening exponent on PC scores (0=rotation only, 1=full whitening)
 
 
+def rank_gauss_mid(y: torch.Tensor) -> torch.Tensor:
+    """(B, n) -> per-row Gaussian rank scores with midranks: tied labels (censored point masses) share one score
+    instead of rank_gauss's arbitrary argsort order."""
+    ref = y.float().sort(-1).values.contiguous()
+    lo = torch.searchsorted(ref, y.float().contiguous(), side="left")
+    hi = torch.searchsorted(ref, y.float().contiguous(), side="right")
+    uniform = ((lo + hi).float() * 0.5) / y.shape[-1]            # midrank + 0.5 over n (rank_gauss for distinct values)
+    return (torch.erfinv(2 * uniform - 1) * math.sqrt(2)).to(y.dtype)
+
+
 def rank_gauss(y: torch.Tensor) -> torch.Tensor:
     """(B, n) continuous labels -> per-row Gaussian rank scores. Monotone; removes marginal skew/outliers."""
     ranks = y.float().argsort(-1).argsort(-1).float()
     uniform = (ranks + 0.5) / y.shape[-1]
     return (torch.erfinv(2 * uniform - 1) * math.sqrt(2)).to(y.dtype)
+
+
+@torch.no_grad()
+def ecdf_transform(x: torch.Tensor, n_fit: int) -> torch.Tensor:
+    """(B, n, G) -> rank-Gauss encoding: probit of each row's per-gene ECDF against the first n_fit (support) rows only.
+    Midranks for ties (expression has many zeros), u = (midrank + 0.5) / (n_fit + 1) lies strictly in (0, 1). A row's
+    value never depends on other non-support rows, so query chunking stays exact."""
+    xt = x.float().transpose(1, 2).contiguous()                          # (B, G, n)
+    ref = xt[..., :n_fit].sort(-1).values.contiguous()                   # (B, G, n_fit)
+    lo = torch.searchsorted(ref, xt, side="left")
+    hi = torch.searchsorted(ref, xt, side="right")
+    u = ((lo + hi).float() * 0.5 + 0.5) / (n_fit + 1)
+    del lo, hi, ref
+    return (torch.erfinv(2 * u - 1) * math.sqrt(2)).transpose(1, 2).to(x.dtype)
+
+
+class FourierEmbed(nn.Module):
+    """Learned Fourier features of a scalar (here: a PC score): [sin(2 pi w x), cos(2 pi w x)] with learned
+    frequencies w ~ N(0, sigma) shared across features, then a linear projection to embed_dim."""
+    def __init__(self, n_freq, embed_dim, sigma=1.0):
+        super().__init__()
+        self.freq = nn.Parameter(sigma * torch.randn(n_freq))
+        self.proj = nn.Linear(2 * n_freq, embed_dim)
+
+    def forward(self, x):                                                # (...,) -> (..., embed_dim)
+        ang = 2 * math.pi * x[..., None] * self.freq.to(x.dtype)
+        return self.proj(torch.cat([ang.sin(), ang.cos()], dim=-1))
 
 
 def get_mlp(n_in, n_hidden, n_out):
@@ -129,14 +166,23 @@ class GeneICL(nn.Module):
     is_cls=False -> regression preds; is_cls=True -> class logits; is_cls=(B,) tensor (training) -> per-item labels.
     enc_mode: "bottleneck" (GeneICL) or "full" (full row attention, ablation).
     pca_var: the model reads per-dataset PCs covering this fraction of the support set's variance.
+    feat_transform: per-gene encoding before the PCA, "zscore" (trm_segmented8) or "rank_gauss" (ecdf_transform;
+    C20RFbal, R20RFs20Yv).
+    n_fourier > 0 adds learned Fourier features of the PC scores (FourierEmbed, init std fourier_sigma).
+    y_enc (continuous labels): "rank" = Gaussian rank scores only (argsort ranks, as in trm_segmented8); "rank_value" =
+    midrank Gaussian scores plus the support-standardized value itself (clamped to +-10) through a second linear map,
+    so the model sees the spacing of the labels and tied (censored) blocks share one code.
     """
     def __init__(self, n_genes=20021, embed_dim=128, n_blocks=3, nhead=8, n_think_rows=8,
                  n_cls_cols=4, n_cls_rows=4, loop_iters=8, enc_mode="bottleneck",
-                 max_k=MAX_K, pca_var=0.9, enc_cls_ffn=True):
+                 max_k=MAX_K, pca_var=0.9, enc_cls_ffn=True, feat_transform="zscore", n_fourier=0,
+                 fourier_sigma=1.0, y_enc="rank"):
         super().__init__()
         assert enc_mode in ("bottleneck", "full"), enc_mode
         assert n_think_rows > 0, "the recurrent ICL stage needs n_think_rows > 0 (the thinking workspace)"
         assert 0 < pca_var <= 1, pca_var
+        assert feat_transform in ("zscore", "rank_gauss"), feat_transform
+        self.feat_transform = feat_transform
         self.n_cls_cols = n_cls_cols
         self.pca_var = pca_var
         self.max_k = max_k
@@ -177,13 +223,25 @@ class GeneICL(nn.Module):
         self.eqr_block = PostNormICLBlock(icl_dim, nhead, ssmax=True, use_mlp=True)
         self.trm_continue_head = nn.Linear(icl_dim, 1)   # unused, see loop_layers above
         nn.init.zeros_(self.trm_continue_head.weight); nn.init.constant_(self.trm_continue_head.bias, 5.0)
+        # optional learned Fourier features of the PC scores; built last so the seeded init of everything above
+        # matches the trm_segmented8 checkpoints
+        self.fourier = FourierEmbed(n_fourier, embed_dim, fourier_sigma) if n_fourier > 0 else None
+        # optional rank + value label encoding, also built last (the seeded init of everything above is unchanged)
+        assert y_enc in ("rank", "rank_value"), y_enc
+        self.y_enc = y_enc
+        if y_enc == "rank_value":
+            self.y_val_in, self.y_val_icl = nn.Linear(1, embed_dim), nn.Linear(1, icl_dim)
 
     # ── label embedding routing ───────────────────────────────────────────────────────────────────
-    def _y_emb(self, y, is_cls, cls_layer, num_layer):
+    def _y_emb(self, y, is_cls, cls_layer, num_layer, val_layer=None):
         """Route (B, T) labels to the correct embedding layer based on is_cls (True/False/(B,) tensor)."""
         if is_cls is True:
             return cls_layer(y.long())
-        numeric = num_layer(rank_gauss(y)[..., None])
+        if self.y_enc == "rank_value":
+            value = y.float().clamp(-10.0, 10.0).to(y.dtype)
+            numeric = num_layer(rank_gauss_mid(y)[..., None]) + val_layer(value[..., None])
+        else:
+            numeric = num_layer(rank_gauss(y)[..., None])
         if is_cls is False:
             return numeric
         # mixed batch: evaluate both, torch.where picks per element
@@ -193,10 +251,10 @@ class GeneICL(nn.Module):
         return torch.where(is_cls[:, None, None], classes, numeric)
 
     def _y_in(self, y, is_cls):
-        return self._y_emb(y, is_cls, self.y_embed_in_cls, self.y_embed_in_num)
+        return self._y_emb(y, is_cls, self.y_embed_in_cls, self.y_embed_in_num, getattr(self, "y_val_in", None))
 
     def _y_icl(self, y, is_cls):
-        return self._y_emb(y, is_cls, self.y_embed_icl_cls, self.y_embed_icl_num)
+        return self._y_emb(y, is_cls, self.y_embed_icl_cls, self.y_embed_icl_num, getattr(self, "y_val_icl", None))
 
     def _head(self, emb, n_skip, is_cls):
         feat = self.out_ln(emb[:, n_skip:])
@@ -263,8 +321,18 @@ class GeneICL(nn.Module):
         x = x.masked_fill(mask, float('nan'))
         mean = torch.nan_to_num(torch.nanmean(x[:, :n_fit], dim=1, keepdim=True))
         x = torch.where(mask, mean.expand_as(x), x)
-        std = x[:, :n_fit].std(dim=1, unbiased=False, keepdim=True) + 1e-8
-        x = ((x - mean) / std).clamp(-10.0, 10.0)
+        if self.feat_transform == "zscore":
+            std = x[:, :n_fit].std(dim=1, unbiased=False, keepdim=True) + 1e-8
+            x = ((x - mean) / std).clamp(-10.0, 10.0)
+        else:   # per-gene ECDF against the support rows (no re-standardization: tie-heavy genes keep low variance)
+            gp = getattr(self, "gene_w_pow", None)
+            if gp:  # inference-time gene weights (geneicl.Runner): support sd of the ECDF input / its mean
+                sd = x[:, :n_fit].float().std(1, unbiased=False, keepdim=True)        # over genes with sd > 0, cap 5
+                pos = sd > 0
+                w = (sd / ((sd * pos).sum(-1, keepdim=True) / pos.sum(-1, keepdim=True).clamp_min(1))).clamp(max=5.0)
+            x = ecdf_transform(x, n_fit)
+            if gp:
+                x = (x.float() * w ** float(gp)).to(x.dtype)
 
         # Per-dataset PCA on already-standardized x. Gram trick: decompose (T×T) not (G×G).
         # Fit on n_fit rows only; project all rows. fp32 required: eigh rejects bf16.
@@ -289,6 +357,8 @@ class GeneICL(nn.Module):
         pc_scores = pc_scores.to(x.dtype)
         pca_inp = torch.stack([pc_scores, torch.zeros_like(pc_scores)], dim=-1)  # mask=0: PCs are dense
         emb = self.x_embed(pca_inp)
+        if self.fourier is not None:
+            emb = emb + self.fourier(pc_scores)
 
         # support labels enter twice: here into every feature token (so the encoder can relate features to y),
         # and again below into the row token that the recurrent ICL stage reads
