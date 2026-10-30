@@ -16,4 +16,5 @@ dependencies = ["torch>=2.4", "numpy"]   # torch 2.4: nn.RMSNorm
 packages = ["geneicl"]                   # eval/ (the manuscript reproduction) is not part of the package
 
 [tool.setuptools.package-data]
-geneicl = ["checkpoints/*.pt"]           # the three released checkpoints, 25 MB each
+# seed 0 of each checkpoint family, 25 MB each (all seeds: in the repository; PyPI caps a file at 100 MB)
+geneicl = ["checkpoints/C20RFbal_s0.pt", "checkpoints/R20RFs20Yv_s0.pt", "checkpoints/trm_segmented8_s0.pt"]
