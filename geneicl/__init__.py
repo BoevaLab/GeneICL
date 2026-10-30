@@ -42,7 +42,7 @@ import torch
 from . import model as M
 
 __all__ = ["GeneICL", "Runner", "CKPT_CLS", "CKPT_REG", "CKPT_V1"]
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 _CKPT_DIR = Path(__file__).resolve().parent / "checkpoints"   # seed 0 of each is in the package, seeds 1 / 2 in git
 CKPT_CLS = _CKPT_DIR / "C20RFbal_s0.pt"           # classification

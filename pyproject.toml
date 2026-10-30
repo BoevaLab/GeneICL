@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "geneicl"
-version = "1.0.0"
-description = "In-context learning for bulk gene expression: classification, regression and survival with one model"
+version = "1.1.0"
+description = "In-context learning for bulk gene expression: classification, regression and survival"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
