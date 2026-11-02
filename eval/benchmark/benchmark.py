@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """GeneICL (segmented) benchmark harness — reproduce the paper's GeneICL results on the frozen eval suite.
 
-Scores a GeneICL checkpoint (geneicl/checkpoints/trm_segmented8_s*.pt) in-context on RAW genes (the model does its own per-fold
-standardization + internal PCA). Optional test-time ensembles (all label-free, default off):
-    geneicl_support_ens=K   support-view ensemble: K class-stratified 90% support subsets, averaged
-    geneicl_pca_ens=[...]   PCA-threshold ensemble: average over internal pca_var thresholds
+Scores GeneICL in-context on RAW genes (the model does its own per-fold gene encoding + internal PCA), with the
+classification checkpoint on classification tasks and the regression checkpoint on regression tasks
+(geneicl/checkpoints/C20RFbal_s*.pt / R20RFs20Yv_s*.pt; geneicl_ckpt= scores one checkpoint on every task, e.g. the
+v1.0.0 trm_segmented8_s*.pt). Inference (geneicl_inference, see geneicl/__init__.py):
+    normal   GeneICL (default): 6 input configurations weighted by an inner CV on the support set
+    fast     GeneICL-Fast: plain + gene-weighted input, no inner CV
 
 One run scores the whole suite (regression and classification tasks). Per fold it records the metric panel
 (clf: auroc/auprc/f1/balanced_accuracy/accuracy/mcc/nll/brier/ece; reg: pearson/spearman/r2/mape) in
@@ -13,8 +15,8 @@ offline: `<out>_regression.oof.csv` (regression per-sample preds -> pooled-OOF R
 `<out>_classification.clfoof.npz` (classification per-sample class probabilities). Aggregate with
 pooled_oof_table.py.
 
-    python benchmark.py model=geneicl geneicl_ckpt=../../geneicl/checkpoints/trm_segmented8_s0.pt out=results/geneicl_trm_s0
-    # ensembled variant: add geneicl_support_ens=32 geneicl_pca_ens=[0.9,0.95,0.98]
+    python benchmark.py model=geneicl out=results/geneicl_s0      # seed 1: geneicl_ckpt_cls=../../geneicl/checkpoints/C20RFbal_s1.pt geneicl_ckpt_reg=../../geneicl/checkpoints/R20RFs20Yv_s1.pt
+    # GeneICL-Fast: add geneicl_inference=fast; v1.0.0: geneicl_ckpt=../../geneicl/checkpoints/trm_segmented8_s0.pt geneicl_inference=fast
     # classical baselines (en|rf|catboost|lightgbm|mlp; always tuned on the PCA-90% input): python benchmark.py model=catboost
     # in-context FM competitors (tabpfn|tabpfn_api|tabicl|tabdpt|limix|tabfm; PCA-95% front-end, no tuning; GPU): python benchmark.py model=tabdpt
 """
@@ -50,7 +52,8 @@ from sklearn.preprocessing import StandardScaler
 HERE = Path(__file__).resolve().parent
 DEFAULT_DATA = HERE.parent / "data" / "benchmark"     # the frozen benchmark: eval/data/benchmark
 GENEICL_REPO = HERE.parents[1]                         # repo root: the geneicl/ package lives here
-GENEICL_DEFAULT_CKPT = GENEICL_REPO / "geneicl" / "checkpoints" / "trm_segmented8_s0.pt"   # GeneICL, seed 0
+GENEICL_DEFAULT_CKPT = {"classification": GENEICL_REPO / "geneicl" / "checkpoints" / "C20RFbal_s0.pt",   # GeneICL, seed 0
+                        "regression": GENEICL_REPO / "geneicl" / "checkpoints" / "R20RFs20Yv_s0.pt"}
 # In-context FMs (no tuning). All consume the same PCA(95% var) front-end as the sklearn baselines.
 WEIGHTS = HERE / "weights"                             # FM checkpoints (see weights/README.md)
 # LimiX has no pip package; its code is imported from a clone via sys.path:
@@ -499,72 +502,39 @@ def fit_and_predict(model, tuned, is_cls, Ztr, ytr, Zte, n_classes, seed, n_jobs
     return out, secs, mon.peak_ram_mb, mon.peak_vram_mb
 
 
-# ── GeneICL in-context runner + test-time ensembles ─────────────────────────────
-_GENEICL_RUNNER = None
+# ── GeneICL in-context runner ───────────────────────────────────────────────────
+_GENEICL_RUNNERS = {}                                  # checkpoint path -> geneicl.Runner
 
 
-def _geneicl_runner(geneicl_cfg):
-    global _GENEICL_RUNNER
-    if _GENEICL_RUNNER is None:
+def _geneicl_runner(geneicl_cfg, is_cls):
+    ckpt = Path(geneicl_cfg["ckpt_cls" if is_cls else "ckpt_reg"])
+    if ckpt not in _GENEICL_RUNNERS:
         import sys
         import torch
         if str(GENEICL_REPO) not in sys.path:   # the checkout's geneicl/ package, installed or not
             sys.path.insert(0, str(GENEICL_REPO))
         from geneicl import Runner
-        ckpt = Path(geneicl_cfg["geneicl_ckpt"])
         if not ckpt.exists():
-            raise SystemExit(f"geneicl: no checkpoint at {ckpt}; pass geneicl_ckpt=/path/to.pt")
+            raise SystemExit(f"geneicl: no checkpoint at {ckpt}; pass geneicl_ckpt_cls= / geneicl_ckpt_reg=/path/to.pt")
         dev = "cuda" if torch.cuda.is_available() else "cpu"
-        _GENEICL_RUNNER = Runner(str(ckpt), dev, geneicl_cfg.get("query_chunk", 256))
-    return _GENEICL_RUNNER
-
-
-def _support_views(X, y, k, seed, is_cls):
-    """The support sets to average over: the full support first, then k-1 seeded 90% subsets
-    (class-stratified for classification, so every view carries the same class set and order)."""
-    views = [(X, y)]
-    for j in range(1, k):
-        r = np.random.default_rng(seed + 1009 * (j + 1))
-        if is_cls:
-            sel = [ci[r.permutation(len(ci))][:max(1, int(round(0.9 * len(ci))))]
-                   for ci in (np.where(y == c)[0] for c in np.unique(y))]
-            sub = np.sort(np.concatenate(sel))
-        else:
-            sub = np.sort(r.permutation(len(X))[:max(1, int(round(0.9 * len(X))))])
-        views.append((X[sub], y[sub]))
-    return views
+        _GENEICL_RUNNERS[ckpt] = Runner(str(ckpt), dev, geneicl_cfg.get("query_chunk", 256), geneicl_cfg["inference"])
+    return _GENEICL_RUNNERS[ckpt]
 
 
 def fit_and_predict_geneicl(is_cls, Xtr, ytr, Xte, n_classes, geneicl_cfg):
-    """GeneICL on RAW genes (no shared PCA front-end). Times only the in-context inference. The optional
-    test-time ensemble (label-free, default off) averages the model's outputs -- class probabilities or
-    scalar predictions -- over the product of support views (geneicl_support_ens) and internal PCA
-    thresholds (geneicl_pca_ens); with both off this is a single plain forward pass."""
-    runner = _geneicl_runner(geneicl_cfg)
-    seed = int(geneicl_cfg.get("seed", 0))
+    """GeneICL on RAW genes (no shared PCA front-end), in the geneicl_inference mode. Times only the in-context
+    inference (normal mode includes its inner CV on the support set)."""
+    runner = _geneicl_runner(geneicl_cfg, is_cls)
     ytr = np.asarray(ytr)
-    views = _support_views(Xtr, ytr, int(geneicl_cfg.get("support_ens", 1) or 1), seed, is_cls)
-    pca_vars = list(geneicl_cfg.get("pca_ens") or []) or [None]      # None -> the checkpoint's own pca_var
     with _MemMonitor() as mon:
         t = time.perf_counter()
-        acc, cls = None, None
-        for Xv, yv in views:
-            pv = None                                                  # average within a view first, then over
-            for v in pca_vars:                                         # views -- the summation order the
-                kw = {} if v is None else {"pca_var": v}               # published results were produced with
-                if is_cls:
-                    p, cls = runner.predict_proba_fold(Xv, yv, Xte, **kw)   # cls = sorted str labels present
-                else:
-                    p = np.asarray(runner.predict_fold(Xv, yv, Xte, **kw), np.float64)
-                pv = p if pv is None else pv + p
-            pv = pv / len(pca_vars)
-            acc = pv if acc is None else acc + pv
-        out = acc / len(views)
         if is_cls:
-            full = np.zeros((len(Xte), n_classes))
+            p, cls = runner.predict_proba_fold(Xtr, ytr, Xte)         # cls = sorted str labels present
+            out = np.zeros((len(Xte), n_classes))
             for j, c in enumerate(cls):
-                full[:, int(c)] = out[:, j]                           # fold classes -> global 0..K-1
-            out = full
+                out[:, int(c)] = p[:, j]                              # fold classes -> global 0..K-1
+        else:
+            out = np.asarray(runner.predict_fold(Xtr, ytr, Xte), np.float64)
         secs = time.perf_counter() - t
     return out, secs, mon.peak_ram_mb, mon.peak_vram_mb
 
@@ -766,18 +736,19 @@ def _merge_clfoof(path, new):
 
 
 CONFIG = {                        # defaults; override on the CLI as key=value (Hydra)
-    # en|rf|catboost|lightgbm|mlp | tabpfn|tabpfn_api|tabicl|tabdpt|limix|tabfm | geneicl (GeneICL ckpt)
+    # en|rf|catboost|lightgbm|mlp | tabpfn|tabpfn_api|tabicl|tabdpt|limix|tabfm | geneicl (GeneICL)
     # | compass|bulkformer|scfoundation|scgpt|bulkrnabert (frozen-FM embeddings + EN probe; needs emb_dir)
     "model": "en",
     "data_dir": None,             # None -> ../data/benchmark (the benchmark)
     "out": None,                  # output prefix: <out>_<task_type>.csv + companions; None -> results/<model>
     "overwrite": True,            # re-run recomputes from scratch; False = resume unfinished / changed folds
     "seed": 42,
-    # GeneICL (model=geneicl): score a GeneICL checkpoint on RAW genes (no shared PCA). GPU.
-    "geneicl_ckpt": None,         # None -> ../../geneicl/checkpoints/trm_segmented8_s0.pt
+    # GeneICL (model=geneicl): in-context on RAW genes (no shared PCA). GPU.
+    "geneicl_inference": "normal",  # normal (GeneICL) | fast (GeneICL-Fast), see geneicl/__init__.py
+    "geneicl_ckpt_cls": None,     # None -> ../../geneicl/checkpoints/C20RFbal_s0.pt (classification tasks)
+    "geneicl_ckpt_reg": None,     # None -> ../../geneicl/checkpoints/R20RFs20Yv_s0.pt (regression tasks)
+    "geneicl_ckpt": None,         # one checkpoint for every task (overrides both), e.g. the v1.0.0 trm_segmented8_s0.pt
     "query_chunk": 256,           # predict geneicl test rows in chunks
-    "geneicl_support_ens": None,  # test-time ensemble (label-free; None/1 = off): e.g. 32 support views
-    "geneicl_pca_ens": None,      # e.g. [0.9,0.95,0.98] -> PCA-threshold ensemble
     "emb_dir": None,              # frozen-FM embedding dir (<dataset>.npz with emb, obs_names) for the embedding models
 }
 ConfigStore.instance().store(name="benchmark", node=CONFIG)
@@ -790,11 +761,10 @@ def main(cfg: DictConfig) -> None:
     if cfg.model in EMB_MODELS:
         assert cfg.get("emb_dir"), f"model={cfg.model} reads frozen embeddings: pass emb_dir=<dir of <dataset>.npz>"
         _EMB_DIR = Path(cfg.emb_dir)
-    geneicl_cfg = {"seed": int(cfg.seed),
-                   "query_chunk": int(cfg.get("query_chunk", 256)),
-                   "geneicl_ckpt": cfg.get("geneicl_ckpt") or str(GENEICL_DEFAULT_CKPT),
-                   "pca_ens": list(cfg.get("geneicl_pca_ens") or []),
-                   "support_ens": int(cfg.get("geneicl_support_ens", 1) or 1)}
+    geneicl_cfg = {"query_chunk": int(cfg.get("query_chunk", 256)),
+                   "inference": cfg.get("geneicl_inference", "normal"),
+                   "ckpt_cls": cfg.get("geneicl_ckpt") or cfg.get("geneicl_ckpt_cls") or str(GENEICL_DEFAULT_CKPT["classification"]),
+                   "ckpt_reg": cfg.get("geneicl_ckpt") or cfg.get("geneicl_ckpt_reg") or str(GENEICL_DEFAULT_CKPT["regression"])}
     data_dir = Path(cfg.data_dir) if cfg.get("data_dir") else DEFAULT_DATA
     tasks = [t for t in json.load(open(data_dir / "index.json"))["tasks"]
              if t["task_type"] in ("classification", "regression")]   # survival tasks: quickstart only

@@ -16,7 +16,7 @@ Reads the benchmark.py outputs in <dir>: <tag>_{classification,regression}.csv p
 companions <tag>_regression.oof.csv (pooled-OOF R2) and <tag>_classification.clfoof.npz. Multi-seed models
 pass their per-seed tags; each cell is the mean over seeds x common tasks.
 
-  python pooled_oof_table.py dir=results 'models=[["GeneICL (segmented)",geneicl_trm_s0,geneicl_trm_s1,geneicl_trm_s2],["GeneICL (segmented, ens k=32)",geneicl_trm_supp_thresh_k32_s0,geneicl_trm_supp_thresh_k32_s1,geneicl_trm_supp_thresh_k32_s2]]'
+  python pooled_oof_table.py dir=results 'models=[[GeneICL,geneicl_s0,geneicl_s1,geneicl_s2],[GeneICL-Fast,geneicl_fast_s0,geneicl_fast_s1,geneicl_fast_s2]]'
   (keep the whole models=[...] override on ONE line: Hydra's override grammar rejects newlines)
 
 Defaults: CONFIG in this file.
@@ -99,7 +99,7 @@ REG_DISPLAY = [("pearson", "Pearson", "reg"), ("spearman", "Spearman", "reg"), (
 CONFIG = {                        # defaults; override on the CLI as key=value (Hydra)
     "dir": "results",             # benchmark.py output directory
     # REQUIRED list of [display name, tag1, tag2, ...] (one entry per model; tags = per-seed runs), e.g.
-    # 'models=[["GeneICL",geneicl_trm_s0,geneicl_trm_s1,geneicl_trm_s2],[CatBoost,catboost]]'
+    # 'models=[[GeneICL,geneicl_s0,geneicl_s1,geneicl_s2],[CatBoost,catboost]]'
     "models": "???",
     # any of: auroc balanced_accuracy auprc f1_macro f1_weighted accuracy mcc nll brier ece (all mean-of-folds)
     "clf_metrics": ["auroc", "balanced_accuracy", "auprc"],

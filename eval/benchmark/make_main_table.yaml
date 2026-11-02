@@ -10,25 +10,23 @@ reference_row: GeneICL      # rows whose CV folds differ from this row's on any 
 
 rows:
   # --- Tabular foundation models ---
-  - name: GeneICL              # seeds 0,1,2 (mean + SD), encoder without the gene->CLS FFN (enc_cls_ffn=false)
+  - name: GeneICL              # inference=normal, seeds 0,1,2 (mean + SD); classification / regression checkpoints
     section: Tabular foundation models
     highlight: true
-    params_ckpt: [../../geneicl/checkpoints/trm_segmented8_s0.pt]
+    params_ckpt: [../../geneicl/checkpoints/C20RFbal_s0.pt, ../../geneicl/checkpoints/R20RFs20Yv_s0.pt]
     params_exclude: [loop_layers.]   # unused block stored in the checkpoint (see geneicl/model.py)
-    clf: [results/geneicl_trm_s0_classification.csv, results/geneicl_trm_s1_classification.csv,
-          results/geneicl_trm_s2_classification.csv]
-    reg: [results/geneicl_trm_s0_regression.csv, results/geneicl_trm_s1_regression.csv,
-          results/geneicl_trm_s2_regression.csv]
-  - name: GeneICL (ensembled)   # per seed: 32 support subsets x 3 PCA thresholds; then mean + SD over seeds 0,1,2
+    clf: [results/geneicl_s0_classification.csv, results/geneicl_s1_classification.csv,
+          results/geneicl_s2_classification.csv]
+    reg: [results/geneicl_s0_regression.csv, results/geneicl_s1_regression.csv,
+          results/geneicl_s2_regression.csv]
+  - name: GeneICL-Fast         # inference=fast, seeds 0,1,2 (mean + SD)
     highlight: true
-    params_ckpt: [../../geneicl/checkpoints/trm_segmented8_s0.pt]
+    params_ckpt: [../../geneicl/checkpoints/C20RFbal_s0.pt, ../../geneicl/checkpoints/R20RFs20Yv_s0.pt]
     params_exclude: [loop_layers.]   # unused block stored in the checkpoint (see geneicl/model.py)
-    clf: [results/geneicl_trm_supp_thresh_k32_s0_classification.csv,
-          results/geneicl_trm_supp_thresh_k32_s1_classification.csv,
-          results/geneicl_trm_supp_thresh_k32_s2_classification.csv]
-    reg: [results/geneicl_trm_supp_thresh_k32_s0_regression.csv,
-          results/geneicl_trm_supp_thresh_k32_s1_regression.csv,
-          results/geneicl_trm_supp_thresh_k32_s2_regression.csv]
+    clf: [results/geneicl_fast_s0_classification.csv, results/geneicl_fast_s1_classification.csv,
+          results/geneicl_fast_s2_classification.csv]
+    reg: [results/geneicl_fast_s0_regression.csv, results/geneicl_fast_s1_regression.csv,
+          results/geneicl_fast_s2_regression.csv]
   - name: TabFM
     params: 1.64e9            # google/tabfm-1.0.0-pytorch: fp32 safetensors, (6.56 GB clf + 6.59 GB reg) / 4 B / 2
     clf: [results/tabfm_classification.csv]

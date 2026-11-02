@@ -15,6 +15,6 @@ One file per (model, task type), written directly by `benchmark.py`:
 kept, missing folds and folds whose CV split changed since the cached run are re-scored. Companions are always merged per (model, task_id, fold),
 never wiped.
 
-GeneICL tags: `geneicl_trm_s<seed>` (single model) and `geneicl_trm_supp_thresh_k32_s<seed>` (32 support views =
-full support + 31 seeded 90% class-stratified subsets, x 3 PCA thresholds {0.9, 0.95, 0.98}, averaged within
-the seed), seeds 0/1/2 (`geneicl/checkpoints/trm_segmented8_s<seed>.pt`).
+GeneICL tags: `geneicl_s<seed>` (`geneicl_inference=normal`) and `geneicl_fast_s<seed>` (`geneicl_inference=fast`),
+seeds 0/1/2 (`geneicl/checkpoints/C20RFbal_s<seed>.pt` on classification tasks, `R20RFs20Yv_s<seed>.pt` on regression
+tasks).
