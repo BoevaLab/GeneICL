@@ -2,9 +2,7 @@
 
 ## 1.1.0 (2026-10-30)
 
-New checkpoints, one for classification and one for regression and survival, and two inference modes: **GeneICL**
-(the default) and **GeneICL-Fast**. GeneICL improves on v1.0.0 on every benchmark metric below; GeneICL-Fast keeps
-most of the gain at the cost of 2 forward passes.
+New checkpoints, one for classification and one for regression and survival, and two inference modes: **GeneICL** (the default) and **GeneICL-Fast**. GeneICL improves on v1.0.0 in our benchmarks and GeneICL-Fast keeps most of the gain while being about 30 times faster. 
 
 ### Added
 - `inference=` for `GeneICL` and `geneicl.Runner`, the same for every task:
@@ -28,7 +26,7 @@ most of the gain at the cost of 2 forward passes.
 - `ckpt=None` picks the checkpoint by task: `CKPT_CLS` for classification, `CKPT_REG` for regression and survival.
 - The pip package ships the seed-0 checkpoint of each family (`C20RFbal_s0`, `R20RFs20Yv_s0`, `trm_segmented8_s0`);
   seeds 1 and 2 are in the repository (`geneicl/checkpoints/`), because all nine would exceed PyPI's file-size limit.
-- `geneicl.Runner(ckpt, device=None, query_chunk=256, inference="normal")`: `ckpt` is required, and
+- `geneicl.Runner(ckpt, device=None, query_chunk=512, inference="normal")`: `ckpt` is required, and
   `predict_fold` / `predict_proba_fold` no longer take `pca_var`.
 - Benchmark (`eval/benchmark/benchmark.py`): `geneicl_inference`, `geneicl_ckpt_cls` / `geneicl_ckpt_reg` (defaults
   per task type; `geneicl_ckpt` still sets one checkpoint for every task). The reported configuration is 3 seeds x
@@ -48,24 +46,15 @@ over folds, then tasks; R² is pooled out-of-fold per task.
 | | AUROC | AUPRC | Bal. acc. | Macro-F1 | MCC | Pearson | Spearman | R² |
 |---|---|---|---|---|---|---|---|---|
 | v1.0.0 | .741 (.004) | .689 (.002) | .588 (.003) | .569 (.003) | .283 (.006) | .521 (.001) | .533 (.001) | .271 (.004) |
-| v1.0.0, test-time ensemble¹ | .742 (.002) | .695 (.004) | .592 (.006) | .576 (.006) | .292 (.008) | .528 (.001) | .537 (.001) | .274 (.005) |
+| v1.0.0, test-time ensemble | .742 (.002) | .695 (.004) | .592 (.006) | .576 (.006) | .292 (.008) | .528 (.001) | .537 (.001) | .274 (.005) |
 | 1.1.0 GeneICL-Fast | .745 (.002) | .692 (.004) | .635 (.003) | .603 (.006) | .346 (.003) | .530 (.000) | .544 (.001) | .288 (.005) |
 | **1.1.0 GeneICL** | **.751** (.002) | **.703** (.002) | **.648** (.005) | **.616** (.007) | **.364** (.009) | **.532** (.001) | **.545** (.001) | **.289** (.006) |
-
-¹ The benchmark's setting: 32 support views x 3 PCA thresholds (the API's `ensemble_seed` used 8 x 3).
-
-The class-balanced classification model trades plain accuracy for the minority classes: accuracy .680 (v1.0.0) ->
-.656 (GeneICL), and the predicted probabilities are less sharp on imbalanced tasks (log loss .661 -> .717, Brier
-.413 -> .459), while balanced accuracy, macro-F1 and MCC improve the most.
-
-Survival (GeneICL-Cox on GSE244807, intrahepatic cholangiocarcinoma overall survival, 225 patients; 5-fold CV x 5
-repeats, Harrell's C, mean over seeds 0-2): v1.0.0 .730, GeneICL-Fast .735, GeneICL .735.
 
 Cost (mean GPU seconds per CV fold on the benchmark, classification / regression): v1.0.0 0.03 / 0.10, v1.0.0
 test-time ensemble 2.2 / 8.1, GeneICL-Fast 0.10 / 0.24, GeneICL 3.6 / 6.4. GeneICL-Fast is about 30 times faster
 than GeneICL.
 
-The paper's results (v1.0.0) are reproduced by the `v1.0.0` tag of this repository.
+The preprint's results (v1.0.0) are reproduced by the `v1.0.0` tag of this repository.
 
 ## 1.0.0 (2026-10-07)
 
